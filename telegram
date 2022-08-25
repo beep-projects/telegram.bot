@@ -1,27 +1,31 @@
 #!/bin/bash
 # ---------------------------------------------------
-# originally obtained from https://github.com/NicolasBernaerts/debian-scripts/tree/master/telegram
+# this file is based on work obtained from https://github.com/NicolasBernaerts/debian-scripts/tree/master/telegram
 #
-#  Send notification to a telegram account through a bot account
-#  Configuration is stored in /etc/telegram/telegram.conf
-#  Depends on curl 
+# Copyright (c) 2022, The beep-projects contributors
+# this file originated from https://github.com/beep-projects
+# Do not remove the lines above.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  Revision history :
-#    10/01/2016, V1.0 - Creation by N. Bernaerts
-#    22/01/2016, V1.1 - Handle emoticons
-#    06/08/2016, V1.2 - Add API key and User ID parameters
-#                       Remove dependency to PERL
-#    08/08/2016, V1.3 - Add --document, --html and --silent options
-#    10/11/2016, V1.4 - Add --icon option
-#    11/01/2018, V1.5 - Add possibility of piped text, idea from Yasir Atabani
-#    19/05/2018, V1.6 - Add socks5 proxy option, idea from RangerRU
-#    28/06/2018, V1.7 - Add --warning and --config options, idea from Markus Hof
-#    08/08/2019, V1.8 - Add --file option (file holding text to display)
-#    23/09/2019, V1.9 - Add --quiet option, thanks to Alberto Panu
-#    06/02/2020, V2.0 - Add --disable_preview option, thanks to Alex P.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/
+#
+#
+# Send notification to a telegram account through a bot account
+# Configuration is stored in /etc/telegram/telegram.conf
+# Depends on curl 
 # ---------------------------------------------------
 
-# initialise variables
+# Initialize all the option variables.
+# This ensures we are not contaminated by variables from the environment.
 NOTIFY_TEXT=""
 DISPLAY_TEXT=""
 DISPLAY_PICT=""
@@ -34,11 +38,67 @@ QUIET="false"
 # Configuration file
 FILE_CONF=/etc/telegram/telegram.conf
 
+#######################################
+# Show help.
+# Globals:
+#   None
+# Arguments:
+#   None
+# Outputs:
+#   Prints usage information to stdout
+#######################################
+function help() {
+cat <<END
+  telegram.sh: Tool to send a message to a Telegram User or Channel.
+  Message is sent from a Telegram Bot and can contain icon, text, image and/or document.
+  Main parameters are :
+    -h/-?/--help        display this help and exit
+    -t/--text <text>       Text of the message (use - for piped text)
+    -f/--file <file>       File holding the text of the message
+    -p/--photo <file>      Image to display
+    -d/--document <file>   Document to transfer
+  Options are :
+    --title <title>     Title of the message (if text message)
+    --html              Use HTML mode for text content (markdown by default)
+    --disable_preview   Don't create previews for links, image and/or document
+    --silent            Send message in silent mode (no user notification on the client)
+    --quiet             Don't print message to stdout
+    -c/--config <file>     use alternate config file, instead of default ${FILE_CONF}
+    -u/--user <user-id>    Recipient User or Channel ID (replaces user-id= in ${FILE_CONF})
+    -k/--key <api-key>     API Key of your Telegram bot (replaces api-key= in ${FILE_CONF})
+  Optional icons are :
+    --success           Add a success icon
+    --warning           Add a warning icon
+    --error             Add an error icon
+    --question          Add a question mark icon
+    --icon <code>       Add an icon by UTF code (ex 1F355)
+  Here is an example of piped text :
+    echo 'text to be displayed' | telegram --success --text -
+
+END
+}
+
+#######################################
+# Print error message.
+# Globals:
+#   None
+# Arguments:
+#   $1 = Error message
+#   $2 = return code (optional, default 1)
+# Outputs:
+#   Prints an error message to stderr
+#######################################
+function error {
+    printf "%s\n" "${1}" >&2 ## Send message to stderr.
+    exit "${2-1}" ## Return a code specified by $2, or 1 by default.
+}
+
+
 # -------------------------------------------------------
 #   Check tools availability
 # -------------------------------------------------------
 
-command -v curl >/dev/null 2>&1 || { echo "[Error] Please install curl"; exit 1; }
+command -v curl >/dev/null 2>&1 || { error "[Error] Please install curl"; }
 
 # -------------------------------------------------------
 #   Loop to load arguments
@@ -47,56 +107,131 @@ command -v curl >/dev/null 2>&1 || { echo "[Error] Please install curl"; exit 1;
 # if no argument, display help
 if [ $# -eq 0 ] 
 then
-  echo "Tool to send a message to a Telegram User or Channel."
-  echo "Message is sent from a Telegram Bot and can contain icon, text, image and/or document."
-  echo "Main parameters are :"
-  echo "  --text <text>       Text of the message (use - for piped text)"
-  echo "  --file <file>       File holding the text of the message"
-  echo "  --photo <file>      Image to display"
-  echo "  --document <file>   Document to transfer"
-  echo "Options are :"
-  echo "  --title <title>     Title of the message (if text message)"
-  echo "  --html              Use HTML mode for text content (markdown by default)"
-  echo "  --disable_preview   Don't create previews for links, image and/or document"
-  echo "  --silent            Send message in silent mode (no user notification on the client)"
-  echo "  --quiet             Don't print message to stdout"
-  echo "  --config <file>     use alternate config file, instead of default ${FILE_CONF}"
-  echo "  --user <user-id>    Recipient User or Channel ID (replaces user-id= in ${FILE_CONF})"
-  echo "  --key <api-key>     API Key of your Telegram bot (replaces api-key= in ${FILE_CONF})"
-  echo "Optional icons are :"
-  echo "  --success           Add a success icon"
-  echo "  --warning           Add a warning icon"
-  echo "  --error             Add an error icon"
-  echo "  --question          Add a question mark icon"
-  echo "  --icon <code>       Add an icon by UTF code (ex 1F355)"
-  echo "Here is an example of piped text :"
-  echo "  echo 'text to be displayed' | telegram-notify --success --text -"
-  exit
+  help
 fi
 
 # loop to retrieve arguments
-while test $# -gt 0
-do
-  case "$1" in
-    "--text") shift; DISPLAY_TEXT="$1"; shift; ;;
-    "--file") shift; TEXTFILE="$1"; shift; ;;
-    "--photo") shift; DISPLAY_PICT="$1"; shift; ;;
-    "--document") shift; DOCUMENT="$1"; shift; ;;
-    "--title") shift; DISPLAY_TITLE="$1"; shift; ;;
-    "--html") DISPLAY_MODE="html"; shift; ;;
-    "--disable_preview") DISABLE_PREVIEW="true"; shift; ;;
-    "--silent") DISPLAY_SILENT="true"; shift; ;;
-    "--quiet") QUIET="true"; shift; ;;
-    "--config") shift; FILE_CONF="$1"; shift; ;;
-    "--user") shift; USER_ID="$1"; shift; ;;
-    "--key") shift; API_KEY="$1"; shift; ;;
-    "--success") DISPLAY_ICON=$(echo -e "\U2705"); shift; ;;
-    "--warning") DISPLAY_ICON=$(echo -e "\U26A0"); shift; ;;
-    "--error") DISPLAY_ICON=$(echo -e "\U1F6A8"); shift; ;;
-    "--question") DISPLAY_ICON=$(echo -e "\U2753"); shift; ;;
-    "--icon") shift; DISPLAY_ICON=$(echo -e "\U$1"); shift; ;;
-    *) shift; ;;
+while :; do
+  case $1 in
+    -h|-\?|--help)
+      help # show help for this script
+      exit
+      ;;
+    -t|--text)
+      if [ "$2" ]; then
+        DISPLAY_TEXT=$2
+        shift
+      else
+        error '"--text" requires a non-empty option argument.'
+      fi
+      ;;
+    -f|--file)
+      if [ "$2" ]; then
+        TEXTFILE=$2
+        shift
+      else
+        error '"--file" requires a non-empty option argument.'
+      fi
+      ;;
+    -p|--photo)
+      if [ "$2" ]; then
+        DISPLAY_PICT=$2
+        shift
+      else
+        error '"--photo" requires a non-empty option argument.'
+      fi
+      ;;
+    -d|--document)
+      if [ "$2" ]; then
+        DOCUMENT=$2
+        shift
+      else
+        error '"--document" requires a non-empty option argument.'
+      fi
+      ;;
+    --title)
+      if [ "$2" ]; then
+        DISPLAY_TITLE=$2
+        shift
+      else
+        error '"--title" requires a non-empty option argument.'
+      fi
+      ;;
+    -c|--config)
+      if [ "$2" ]; then
+        FILE_CONF=$2
+        shift
+      else
+        error '"--config" requires a non-empty option argument.'
+      fi
+      ;;
+    -u|--user)
+      if [ "$2" ]; then
+        USER_ID=$2
+        shift
+      else
+        error '"--user" requires a non-empty option argument.'
+      fi
+      ;;
+    -k|--key)
+      if [ "$2" ]; then
+        API_KEY=$2
+        shift
+      else
+        error '"--key" requires a non-empty option argument.'
+      fi
+      ;;
+    --html)
+      DISPLAY_MODE="html"
+      shift
+      ;;
+    --disable_preview)
+      DISABLE_PREVIEW="true"
+      shift
+      ;;
+    --silent)
+      DISPLAY_SILENT="true"
+      shift
+      ;;
+    --quiet)
+      QUIET="true"
+      shift
+      ;;
+    --success)
+      DISPLAY_ICON=$(echo -e "\U2705")
+      shift
+      ;;
+    --warning)
+      DISPLAY_ICON=$(echo -e "\U26A0")
+      shift
+      ;;
+    --error)
+      DISPLAY_ICON=$(echo -e "\U1F6A8")
+      shift
+      ;;
+    --question)
+      DISPLAY_ICON=$(echo -e "\U2753")
+      shift
+      ;;
+    -i|--icon)
+      if [ "$2" ]; then
+        DISPLAY_ICON=$(echo -e "\U$2")
+        shift
+      else
+        error '"--icon" requires a non-empty option argument.'
+      fi
+      ;;
+    --) # End of all options.
+      shift
+      break
+      ;;
+    -?*)
+      printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
+      ;;
+    *) # Default case: No more options, so break out of the loop.
+      break
   esac
+  shift
 done
 
 # -------------------------------------------------------
