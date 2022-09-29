@@ -40,6 +40,9 @@ VERBOSE="false"
 LOGO="false"
 GET_CHAT_ID="false"
 TIMEOUT=60
+GET_UPDATE_OFFSET="false"
+GET_UPDATES="false"
+OFFSET=-1
 DELETE_MY_COMMANDS="false"
 SET_MY_COMMANDS="false"
 declare -a MY_COMMANDS
@@ -252,11 +255,25 @@ while :; do
       ;;
     --get_chatid)
       GET_CHAT_ID="true"
-      if [ "$2" ]; then
+      if [[ "$2" =~ ^[0-9]*$ ]]; then
         TIMEOUT=$2
         shift
       else
-        error '[telegram.bot] "--get_chatid" requires a non-empty option argument.'
+        error '[telegram.bot] "--get_chatid" requires a timeout value as argument.'
+      fi
+      ;;
+    -get_offset|--get_update_offset)
+      GET_UPDATE_OFFSET="true"
+      ;;
+    --get_updates)
+      GET_UPDATES="true"
+      ;;
+    --offset)
+      if [[ "$2" =~ ^[0-9]*$ ]]; then
+        OFFSET=$2
+        shift
+      else
+        error '[telegram.bot] "--offset" requires a numeric value as argument.'
       fi
       ;;
     -bt|-token|--bottoken)
@@ -388,7 +405,7 @@ verbose "[telegram.bot]" "${0}" "${ARGS}"
 # A Bot Token is always required
 [ "${BOT_TOKEN}" = "" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
 # Some commands do not require a Chat ID
-[ "${CHAT_ID}" = "" ] && [ "${GET_CHAT_ID}" = "false" ] && [ "${DELETE_MY_COMMANDS}" = "false" ] && [ "${SET_MY_COMMANDS}" = "false" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --chatid"; }
+[ "${CHAT_ID}" = "" ] && [ "${GET_CHAT_ID}" = "false" ] && [ "${DELETE_MY_COMMANDS}" = "false" ] && [ "${SET_MY_COMMANDS}" = "false" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && [ "${GET_UPDATE_OFFSET}" = "false" ] && [ "${GET_UPDATES}" = "false" ] && { error "[telegram.bot] Please provide a --chatid"; }
 
 # -------------------------------------------------------
 #   Command : LOGO
@@ -457,24 +474,64 @@ then
   verbose "[telegram.bot] getting CHAT_ID"
   TIMER=0
   verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
+  CURL_RESULT=""
+  CHAT_ID=""
+  UPDATE_COUNT=0
   #loop getUpdate and try to get a chat id
-  while { [ -z "${CHAT_ID}" ] || [ "${CHAT_ID}" = "null" ]; } && (( TIMER < TIMEOUT ))
+  while { [ "${UPDATE_COUNT}" -le 0 ] || [ "${UPDATE_COUNT}" = "null" ]; } && (( TIMER < TIMEOUT ))
   do
-    CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
-    CHAT_ID=$( echo "${CURL_RESULT}" | jq '.result | .[0].message.chat.id' )
+    CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "offset=$((OFFSET+1))" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+    UPDATE_COUNT=$( echo "${CURL_RESULT}" | jq '.result | length' )
     sleep 1
     TIMER=$((TIMER+1))
   done
   verbose "[telegram.bot] JSON received: ${CURL_RESULT}"
-  if [ -n "${CHAT_ID}" ] && [ "${CHAT_ID}" != "null" ]
+  if [ "${UPDATE_COUNT}" -gt 0  ] && [ "${UPDATE_COUNT}" != "null" ]
   then
     verbose "[telegram.bot] got CHAT_ID"
+    #the bot might get updates from multiple chats, so we loop over all updates to return information on all
+    CHAT_ID=$( echo "${CURL_RESULT}" | jq '[ .result[] | .. | select( .chat?.id != null )  | if (.chat?.id < 0) then {chatid:(.chat?.id),name:(.chat?.title)} else {chatid:(.chat?.id),name:(.chat?.first_name)} end ] |  unique' )
     echo "${CHAT_ID}"
-    DISPLAY_TEXT="${CHAT_ID}"
+    #DISPLAY_TEXT="${CHAT_ID}"
+    exit 1
   else
     verbose "[telegram.bot] getting CHAT_ID timed out without success"
     exit 1
   fi
+fi
+
+# -------------------------------------------------------
+#   Command : GET_UPDATE_OFFSET
+# -------------------------------------------------------
+if [ "${GET_UPDATE_OFFSET}" = "true" ]
+then
+  verbose "[telegram.bot] getting UPDATE_OFFSET"
+  TIMER=0
+  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+  UPDATE_OFFSET=$( echo "${CURL_RESULT}" | jq '.result | .[-1].update_id' )
+  verbose "[telegram.bot] JSON received: ${CURL_RESULT}"
+  if [ -n "${UPDATE_OFFSET}" ] && [ "${UPDATE_OFFSET}" != "null" ]
+  then
+    verbose "[telegram.bot] got UPDATE_OFFSET"
+    echo "${UPDATE_OFFSET}"
+  else
+    verbose "[telegram.bot] no update available for setting the offset"
+  fi
+  exit 0
+fi
+
+# -------------------------------------------------------
+#   Command : GET_UPDATES
+# -------------------------------------------------------
+if [ "${GET_UPDATES}" = "true" ]
+then
+  verbose "[telegram.bot] getting UPDATES"
+  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "--data offset=${OFFSET}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data offset=${OFFSET} "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+  echo ${CURL_RESULT}
+  #echo "${CURL_RESULT}" | grep '"ok":true' > /dev/null || { error "${CURL_RESULT}"; }
+  exit 0
 fi
 
 # -------------------------------------------------------
@@ -518,6 +575,9 @@ fi
 #NOTIFY_TEXT=$(echo "${NOTIFY_TEXT}" | sed 's:\\n:\n:g')
 NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/$'\n'}"
 #NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/%0A}"
+#convert reserved characters -
+NOTIFY_TEXT="${NOTIFY_TEXT//-/\\-}"
+
 
 # -------------------------------------------------------
 #   Notification
