@@ -42,7 +42,7 @@ GET_CHAT_ID="false"
 TIMEOUT=60
 GET_UPDATE_OFFSET="false"
 GET_UPDATES="false"
-OFFSET=-1
+OFFSET=0
 DELETE_MY_COMMANDS="false"
 SET_MY_COMMANDS="false"
 declare -a MY_COMMANDS
@@ -480,7 +480,7 @@ then
   #loop getUpdate and try to get a chat id
   while { [ "${UPDATE_COUNT}" -le 0 ] || [ "${UPDATE_COUNT}" = "null" ]; } && (( TIMER < TIMEOUT ))
   do
-    CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "offset=$((OFFSET+1))" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+    CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "offset=${OFFSET}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
     UPDATE_COUNT=$( echo "${CURL_RESULT}" | jq '.result | length' )
     sleep 1
     TIMER=$((TIMER+1))
@@ -528,8 +528,8 @@ if [ "${GET_UPDATES}" = "true" ]
 then
   verbose "[telegram.bot] getting UPDATES"
   verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "--data offset=${OFFSET}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data offset=${OFFSET} "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
-  echo ${CURL_RESULT}
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "offset=${OFFSET}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+  echo "${CURL_RESULT}"
   #echo "${CURL_RESULT}" | grep '"ok":true' > /dev/null || { error "${CURL_RESULT}"; }
   exit 0
 fi
