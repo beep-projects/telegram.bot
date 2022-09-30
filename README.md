@@ -15,13 +15,12 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 # Contents
 
-- [Usage](#usage)
+- [Usage](https://github.com/beep-projects/telegram.bot#usage)
 - [Install/Update](#install-update)
 - [Uninstall](#uninstall)
 - [Commands](#commands)
-- [Custom configurations](#custom-configurations)
-- [Contributing](#contributing)
-- [License](#license)
+  - [help](https://github.com/beep-projects/telegram.bot#help)
+  - [test bot token](https://github.com/beep-projects/telegram.bot#test-bot-token)
 
 
 
