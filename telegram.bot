@@ -34,6 +34,7 @@ PHOTO=""
 DISPLAY_ICON=""
 PARSE_MODE="markdownv2"
 DISABLE_PREVIEW="false"
+DISPLAY_PROTECTED="false"
 DISPLAY_SILENT="false"
 QUIET="false"
 VERBOSE="false"
@@ -76,7 +77,8 @@ cat <<END
   Main parameters are :
     -h/-?/--help           display this help and exit
     --install              install dependencies, copy telegram.bot to /usr/local/bin and exit (run as root)
-    --get_chatid  <timeout> calls getUpdates on the bot for <timeout> seconds and returns the chart id for the first found message
+    --get_chatid           calls getUpdates on the bot and returns the chat id for the found chat ids. 
+                           This call will stop after --timeout seconds (or ${TIMEOUT} seconds if not specified) if no update is received 
     -test/--test_token     Test if the provided --bottoken is valid
     -del/--delete_commands Delete all commands for the bot identified by --bottoken
     -set/--set_commands "command1=description1" "command2=description2" ... Set the commands for this bot
@@ -88,10 +90,12 @@ cat <<END
     --title <title>        Title of the message
     --html                 Use HTML mode for text content (markdown by default)
     --disable_preview      Don't create previews for links, image and/or document
+    --protected            Protects the contents of the sent message from forwarding and saving
     --silent               Send message in silent mode (no user notification on the client)
     -q/--quiet             Don't print message to stdout
     -v/--verbose           explain what is being done
     --print_logo           print the telegram.bot logo
+    --timeout <timeout>    used by --get_chatid to timeout after <timeout> seconds. Overwrites the default value ${TIMEOUT}          
     -cid/--chatid <chat-id>    Recipient User or Channel ID
     -bt|-token|--bottoken <bot-token>     Bot Token of your Telegram bot
   Optional icons are :
@@ -147,7 +151,8 @@ function verbose() {
 #######################################
 function waitForApt() {
   while sudo fuser /var/{lib/{dpkg,apt/lists},cache/apt/archives}/lock >/dev/null 2>&1; do
-   echo ["$(date +%T)"] waiting for access to apt lock files ...
+  # display status message unless --quiet parameter is used
+  [ "${QUIET}" = "false" ] && echo ["$(date +%T)"] waiting for access to apt lock files ...
    sleep 1
   done
 }
@@ -170,7 +175,8 @@ function waitForInternet() {
       break # we are online
     else
       #we are still offline
-      echo ["$(date +%T)"] waiting for internet access ...
+      # display status message unless --quiet parameter is used
+      [ "${QUIET}" = "false" ] && echo ["$(date +%T)"] waiting for internet access ...
       sleep 1
     fi
   done
@@ -196,7 +202,8 @@ function installProgramIfNotAvailable() {
     waitForInternet
     waitForApt
     if ! sudo apt install -qq -y "${apt_package}" > /dev/null 2>&1; then
-      error "[telegram.bot] installation of package ${apt_package} failed" 
+      # display error message unless --quiet parameter is used
+      [ "${QUIET}" = "false" ] && error "[telegram.bot] installation of package ${apt_package} failed" 
     fi    
   else
     verbose "[telegram.bot] Dependency \"${program}\" is fulfilled"
@@ -215,7 +222,8 @@ function installProgramIfNotAvailable() {
 #######################################
 function install() {
   if [[ $(id -u) -ne 0 ]]; then
-    error "[telegram.bot] install() must be run with root privileges" 
+    # display error message unless --quiet parameter is used
+    [ "${QUIET}" = "false" ] && error "[telegram.bot] install() must be run with root privileges" 
   fi
   installProgramIfNotAvailable curl curl
   installProgramIfNotAvailable jq jq
@@ -255,11 +263,13 @@ while :; do
       ;;
     --get_chatid)
       GET_CHAT_ID="true"
+      ;;
+    --timeout)
       if [[ "$2" =~ ^[0-9]*$ ]]; then
         TIMEOUT=$2
         shift
       else
-        error '[telegram.bot] "--get_chatid" requires a timeout value as argument.'
+        error '[telegram.bot] "--timeout" requires a numerical value as argument.'
       fi
       ;;
     -get_offset|--get_update_offset)
@@ -357,6 +367,9 @@ while :; do
     --silent)
       DISPLAY_SILENT="true"
       ;;
+    --protected)
+      DISPLAY_PROTECTED="true"
+      ;;
     -q|--quiet)
       QUIET="true"
       ;;
@@ -367,20 +380,29 @@ while :; do
       LOGO="true"
       ;;
     --success)
-      DISPLAY_ICON=$(echo -e "\U2705")
+      #DISPLAY_ICON=$(echo -e "\U2705")
+      DISPLAY_ICON="\U2705"
       ;;
     --warning)
-      DISPLAY_ICON=$(echo -e "\U26A0")
+      #DISPLAY_ICON=$(echo -e "\U26A0")
+      DISPLAY_ICON="\U26A0"
       ;;
     --error)
-      DISPLAY_ICON=$(echo -e "\U1F6A8")
+      #DISPLAY_ICON=$(echo -e "\U1F6A8")
+      DISPLAY_ICON="\U1F6A8"
       ;;
     --question)
-      DISPLAY_ICON=$(echo -e "\U2753")
+      #DISPLAY_ICON=$(echo -e "\U2753")
+      DISPLAY_ICON="\U2753"
+      ;;
+    --super)
+      #DISPLAY_ICON=$(echo -e "\U19FB8")
+      DISPLAY_ICON="\U19FB8"
       ;;
     -i|--icon)
       if [ "$2" ]; then
-        DISPLAY_ICON=$(echo -e "\U$2")
+        #DISPLAY_ICON=$(echo -e "\U$2")
+        DISPLAY_ICON="${2}"
         shift
       else
         error '[telegram.bot] "--icon" requires a non-empty option argument.'
@@ -403,7 +425,7 @@ verbose "[telegram.bot]" "${0}" "${ARGS}"
 
 # Check Bot Token and Chat ID
 # A Bot Token is always required
-[ "${BOT_TOKEN}" = "" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
+[ "${BOT_TOKEN}" = "" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
 # Some commands do not require a Chat ID
 [ "${CHAT_ID}" = "" ] && [ "${GET_CHAT_ID}" = "false" ] && [ "${DELETE_MY_COMMANDS}" = "false" ] && [ "${SET_MY_COMMANDS}" = "false" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && [ "${GET_UPDATE_OFFSET}" = "false" ] && [ "${GET_UPDATES}" = "false" ] && { error "[telegram.bot] Please provide a --chatid"; }
 
@@ -493,7 +515,7 @@ then
     CHAT_ID=$( echo "${CURL_RESULT}" | jq '[ .result[] | .. | select( .chat?.id != null )  | if (.chat?.id < 0) then {chatid:(.chat?.id),name:(.chat?.title)} else {chatid:(.chat?.id),name:(.chat?.first_name)} end ] |  unique' )
     echo "${CHAT_ID}"
     #DISPLAY_TEXT="${CHAT_ID}"
-    exit 1
+    exit 0
   else
     verbose "[telegram.bot] getting CHAT_ID timed out without success"
     exit 1
@@ -558,7 +580,7 @@ fi
 [ ! -t 0 ] && [ "${DISPLAY_TEXT}" = "-" ] && DISPLAY_TEXT=$(cat)
 
 # if icon defined, include ahead of title and text
-[ "${DISPLAY_ICON}" != "" ] && NOTIFY_TEXT="${DISPLAY_ICON}"
+[ "${DISPLAY_ICON}" != "" ] && NOTIFY_TEXT="${DISPLAY_ICON} "
 
 # if title defined, add it in bold with line break
 if [ "${DISPLAY_TITLE}" != "" ]
@@ -571,13 +593,10 @@ fi
 [ "${DISPLAY_TEXT}" != "" ] && NOTIFY_TEXT="${NOTIFY_TEXT}${DISPLAY_TEXT}"
 
 # convert \n to LF
-#DISPLAY_TEXT=$(echo "${DISPLAY_TEXT}" | sed 's:\\n:\n:g')
-#NOTIFY_TEXT=$(echo "${NOTIFY_TEXT}" | sed 's:\\n:\n:g')
-NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/$'\n'}"
-#NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/%0A}"
+#NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/$'\n'}"
 #convert reserved characters -
-NOTIFY_TEXT="${NOTIFY_TEXT//-/\\-}"
-
+#NOTIFY_TEXT="${NOTIFY_TEXT//-/\\-}"
+NOTIFY_TEXT=$(echo -e "${NOTIFY_TEXT}")
 
 # -------------------------------------------------------
 #   Notification
@@ -587,19 +606,19 @@ NOTIFY_TEXT="${NOTIFY_TEXT//-/\\-}"
 if [ "${PHOTO}" != "" ]
 then
   # display image
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --form "chat_id=${CHAT_ID}" --form "disable_notification=${DISPLAY_SILENT}" --form "disable_web_page_preview=${DISABLE_PREVIEW}" --form "parse_mode=${PARSE_MODE}" --form "photo=@${PHOTO}" --form "caption=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto")
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --form "chat_id=${CHAT_ID}" --form "disable_notification=${DISPLAY_SILENT}" --form "protect_content=${DISPLAY_PROTECTED}" --form "disable_web_page_preview=${DISABLE_PREVIEW}" --form "parse_mode=${PARSE_MODE}" --form "photo=@${PHOTO}" --form "caption=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto")
   verbose "[telegram.bot] ${CURL_RESULT}"
 # if document defined, send it with icon and caption
 elif [ "${DOCUMENT}" != "" ]
 then
   # transfer document
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --form "chat_id=${CHAT_ID}" --form "disable_notification=${DISPLAY_SILENT}" --form "disable_web_page_preview=${DISABLE_PREVIEW}" --form "parse_mode=${PARSE_MODE}" --form "document=@${DOCUMENT}" --form "caption=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument")
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --form "chat_id=${CHAT_ID}" --form "disable_notification=${DISPLAY_SILENT}" --form "protect_content=${DISPLAY_PROTECTED}" --form "disable_web_page_preview=${DISABLE_PREVIEW}" --form "parse_mode=${PARSE_MODE}" --form "document=@${DOCUMENT}" --form "caption=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument")
   verbose "[telegram.bot] ${CURL_RESULT}"
 # else, if text is defined, display it with icon and title
 elif [ "${NOTIFY_TEXT}" != "" ]
 then
   # display text message
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "chat_id=${CHAT_ID}" --data "disable_notification=${DISPLAY_SILENT}" --data "disable_web_page_preview=${DISABLE_PREVIEW}" --data "parse_mode=${PARSE_MODE}" --data "text=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage")
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "chat_id=${CHAT_ID}" --data "disable_notification=${DISPLAY_SILENT}" --data "protect_content=${DISPLAY_PROTECTED}" --data "disable_web_page_preview=${DISABLE_PREVIEW}" --data "parse_mode=${PARSE_MODE}" --data "text=${NOTIFY_TEXT}" "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage")
   verbose "[telegram.bot] ${CURL_RESULT}"
 #  else, nothing, error
 elif [ "${DELETE_MY_COMMANDS}" = "true" ]
