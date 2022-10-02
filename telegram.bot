@@ -77,8 +77,11 @@ cat <<END
   Main parameters are :
     -h/-?/--help           display this help and exit
     --install              install dependencies, copy telegram.bot to /usr/local/bin and exit (run as root)
-    --get_chatid           calls getUpdates on the bot and returns the chat id for the found chat ids. 
+    --print_logo           print the telegram.bot logo
+    --get_chatid           calls getUpdates on the --bottoken and returns the chat ids found
                            This call will stop after --timeout seconds (or ${TIMEOUT} seconds if not specified) if no update is received 
+    --get_updates          gets the updates available for --bottoken. Can be restricted to only get updates >= --offset
+    --get_update_offset    gets the offset of the last update available for --bottoken
     -test/--test_token     Test if the provided --bottoken is valid
     -del/--delete_commands Delete all commands for the bot identified by --bottoken
     -set/--set_commands "command1=description1" "command2=description2" ... Set the commands for this bot
@@ -94,7 +97,6 @@ cat <<END
     --silent               Send message in silent mode (no user notification on the client)
     -q/--quiet             Don't print message to stdout
     -v/--verbose           explain what is being done
-    --print_logo           print the telegram.bot logo
     --timeout <timeout>    used by --get_chatid to timeout after <timeout> seconds. Overwrites the default value ${TIMEOUT}          
     -cid/--chatid <chat-id>    Recipient User or Channel ID
     -bt|-token|--bottoken <bot-token>     Bot Token of your Telegram bot
@@ -103,9 +105,9 @@ cat <<END
     --warning              Add a warning icon
     --error                Add an error icon
     --question             Add a question mark icon
-    --icon <code>          Add an icon by UTF code (ex 1F355)
+    --icon <code>          Add an icon by UTF-8 code (ex \U1F355)
   Here is an example of piped text :
-    echo 'text to be displayed' | telegram --success --text -
+    echo 'text to be displayed' | telegram.bot --success --text -
 
 END
 }
@@ -394,10 +396,6 @@ while :; do
     --question)
       #DISPLAY_ICON=$(echo -e "\U2753")
       DISPLAY_ICON="\U2753"
-      ;;
-    --super)
-      #DISPLAY_ICON=$(echo -e "\U19FB8")
-      DISPLAY_ICON="\U19FB8"
       ;;
     -i|--icon)
       if [ "$2" ]; then

@@ -1,0 +1,1 @@
+\U2705*Welcome to telegram\.bot*\nThe *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\.
