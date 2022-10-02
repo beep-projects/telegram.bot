@@ -19,9 +19,20 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 - [Install/Update](#installupdate)
 - [Uninstall](#uninstall)
 - [Commands](#commands)
-  - [help](#help)
-  - [test bot token](#test-bot-token)
-  - 
+  - [Get Help](#get-help)
+  - [Test API Token](#test-api-token)
+  - [Get Chatid](#get-chatid)
+  - [Get Updates](#get-updates)
+  - [Get Update Offset](#get-update-offset)
+  - [Set Commands](#set-commands)
+  - [Delete Commands](#delete-commands)
+  - [Send Text](#send-text)
+  - [Pipe Text to send](#pipe-text-to-send)
+  - [Send Text from a File](#send-text-from-a-file)
+  - [Send a Photo](#send-a-photo)
+  - [Send a Document](#send-a-document)
+  - [Optional Flags](#optional-flags)
+  - [Flags Compatibility Matrix](#flags-compatibility-matrix)
 
 
 
@@ -29,7 +40,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 [(Back to Contents)](#contents)
 
-For using `telegram.bot`, you need a **Telegram** account and app. See [telegram.org](https://telegram.org/) on how to set this up.  Once you have Telegram installed, you need to create a **bot**. This can be done by talking to **[@BotFather](https://core.telegram.org/bots#6-botfather)** in your Telegram app. [Follow this guide](https://core.telegram.org/bots#6-botfather), or google for it.
+For using `telegram.bot`, you need a **Telegram** account and app. See [telegram.org](https://telegram.org/) on how to set this up.  Once you have Telegram installed, you need to create a **bot** and get an **API token** for it. This can be done by talking to **[@BotFather](https://core.telegram.org/bots#6-botfather)** in your Telegram app. [Follow this guide](https://core.telegram.org/bots#6-botfather), or google for it.
 
 The **API token** is a string like `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw` that is required to authorize your requests for communication via the Bot API.  Once you have obtained an API token to authorize your bot, you can start using `telegram.bot`.
 
@@ -41,7 +52,7 @@ beep@projects:~$ telegram.bot --test_token 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5
 beep@projects:~$ 
 ```
 
-Once you have an API token for your bot, you need a **chat id** that the bot should talk to. The chat id is not easy to find, but `telegram.bot` will help you.
+Once you have an API token for your bot, you need a **chat id** to which the bot should talk to. The chat id is not easy to find, but `telegram.bot` will help you.
 
 You have two options:
 
@@ -76,7 +87,7 @@ With that information, you are ready to go!
 beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --text "Hello World"
 ```
 
-Messages are build up by four elements (`--document` || `--photo`), `--icon`,`--title` and `--text`  which can be used stand alone, or in combination.
+Messages are build up by four elements (`--document` || `--photo`), `--icon`, `--title` and `--text`  which can be used stand alone, or in combination.
 
 ```bash
 beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
@@ -290,7 +301,7 @@ beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PA
 
 This command requires the following flags `--bottoken`, `--chatid`, `--text` 
 
-Optional you can add an `--icon` to the beginning of your message . For easier use, `--success` (:white_check_mark:, 2705), `--warning` (:warning:, 26A0), `--error` (:rotating_light:, 1F6A8), and `--question` (:question:, 2753)  are, predefined icons. You can find other codes to use in the [Emoji List](https://unicode.org/emoji/charts/full-emoji-list.html) (Telegram does not support the full list, but unfortunately I have not yet found a complete list for Telegram)
+Optional you can add an `--icon` to the beginning of your message . For easier use, `--success` (:white_check_mark:, \U2705), `--warning` (:warning:, \U26A0), `--error` (:rotating_light:, \U1F6A8), and `--question` (:question:, \U2753)  are, predefined icons. You can find other codes to use in the [Emoji List](https://unicode.org/emoji/charts/full-emoji-list.html) (Telegram does not support the full list, but unfortunately I have not yet found a complete list for Telegram)
 
 Another option is to add a`--title`, which actually puts a new line holding the title in bold to the beginning of the message, just afer the icon, if set.
 
@@ -315,7 +326,7 @@ You can use all other flags that you can also use with [--text](#send-text).
 This function reads the content from a text file and sends it
 
 ```bash
-beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --file your_file.txt
+beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --file resources/testtextfile.txt
 ```
 
 This command requires the following flags `--bottoken`, `--chatid`, `--file` 
@@ -366,7 +377,7 @@ Optionally, you can add `--icon`. `--title`, and `--text` to the message
 
 `--verbose` tells the script to print out additional information on what is going on
 
-## Flags Compatibility Matrix
+### Flags Compatibility Matrix
 
 **r** = required
 
