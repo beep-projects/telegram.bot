@@ -77,11 +77,13 @@ beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvC
 
 Messages are build up by four elements (`--document` || `--photo`), `--icon`,`--title` and `--text`  which can be used stand alone, or in combination.
 
-<img src="/home/freak/git/telegram.bot/resources/usage_example.png" alt="usage_example" align="left" style="zoom:33%;" /> 
+<img src="resources/usage_example.png" alt="usage_example" align="left" style="zoom:33%;" /> 
 
 ```bash
 beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken ***REMOVED*** --chatid ***REMOVED*** --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
 ```
+
+
 
 
 
