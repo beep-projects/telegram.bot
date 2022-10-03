@@ -13,7 +13,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 
 
-# :book: Contents
+# Contents
 
 - [Usage](#usage)
 - [Install/Update](#installupdate)
@@ -36,7 +36,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 
 
-## :computer: Usage
+## Usage
 
 [(Back to Contents)](#contents)
 
@@ -98,7 +98,7 @@ beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH
 
 </p> 
 
-## :floppy_disk: Install/Update
+## Install/Update
 
 [(Back to Contents)](#contents)
 
@@ -110,7 +110,7 @@ chmod 755 telegram.bot
 sudo ./telegram.bot --install
 ```
 
-
+## 
 
 ## Uninstall
 
