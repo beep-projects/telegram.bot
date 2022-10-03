@@ -13,7 +13,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 
 
-# Contents
+# :book: Contents
 
 - [Usage](#usage)
 - [Install/Update](#installupdate)
@@ -36,7 +36,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 
 
-## Usage
+## :computer: Usage
 
 [(Back to Contents)](#contents)
 
@@ -98,7 +98,7 @@ beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH
 
 </p> 
 
-## Install/Update
+## :floppy_disk: Install/Update
 
 [(Back to Contents)](#contents)
 
