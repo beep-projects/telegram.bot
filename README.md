@@ -7,7 +7,7 @@
 
 `telegram.bot` is a bash script to send Telegram messages on [Debian](https://www.debian.org/)-based distributions.
 
-Goal is to have the installation foot print as low as possible, but dependencies are [curl](https://curl.se/) and [jq](https://stedolan.github.io/jq/).
+Goal is to have the installation foot print as low as possible, but it still dependes on [curl](https://curl.se/) and [jq](https://stedolan.github.io/jq/).
 
 This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/master/telegram 
 

@@ -20,7 +20,6 @@
 #
 #
 # Send notification to a telegram account through a bot account
-# Configuration is stored in /etc/telegram/telegram.conf
 # Depends on curl, jq (and will try to install these via apt if missing)
 # ---------------------------------------------------
 
