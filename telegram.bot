@@ -86,7 +86,7 @@ cat <<END
     -set/--set_commands "command1=description1" "command2=description2" ... Set the commands for this bot
     -t/--text <text>       Text of the message (use - for piped text)
     -f/--file <file>       File holding the text of the message
-    -p/--photo <file>      Image to display
+    -p/--photo/--picture <file>      Image to display
     -d/--document <file>   Document to transfer
   Options are :
     --title <title>        Title of the message

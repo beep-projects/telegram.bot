@@ -42,7 +42,7 @@ This script is based on https://github.com/NicolasBernaerts/debian-scripts/tree/
 
 For using `telegram.bot`, you need a **Telegram** account and app. See [telegram.org](https://telegram.org/) on how to set this up.  Once you have Telegram installed, you need to create a **bot** and get an **API token** for it. This can be done by talking to **[@BotFather](https://core.telegram.org/bots#6-botfather)** in your Telegram app. [Follow this guide](https://core.telegram.org/bots#6-botfather), or google for it.
 
-The **API token** is a string like `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw` that is required to authorize your requests for communication via the Bot API.  Once you have obtained an API token to authorize your bot, you can start using `telegram.bot`.
+The **API token** is a string like `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw` that is required to authorize your requests for communication via the [Telegram Bot API](https://core.telegram.org/bots/api).  Once you have obtained an API token to authorize your bot, you can start using `telegram.bot`.
 
 First thing you should do is to test if your API token is valid. The test will finish silently, if the API token is valid, and it will return the Telegram server's reply, if the API token is invalid, e.g.
 
@@ -57,11 +57,11 @@ Once you have an API token for your bot, you need a **chat id** to which the bot
 You have two options:
 
 - You either make the bot to chat with you directly, then you need your personal chat id.
-- Or you make the bot to chat with a group, then you have to add the bot first to that group. 
+- Or you make the bot to chat with a group, then you have to add the bot to that group. 
 
 <sub>(One note about bots in groups: By default, bots can only read **commands** which are posted in groups and not all messages. A command is a single words (`[a-z_0-9]{1,32}`) with a prefixed `/`, e.g. `/help`. If you want that your bot can receive all messages from a group, you have to promote it to be a group admin. )</sub>
 
-What ever your choice is, send a message to the group, or to your bot and call the following command. This will give you a list of chat ids, from which the bot got updates.
+What ever your choice is, send a message to the group or to your bot and call the following command. This will give you a list of chat ids, from which the bot got updates.
 
 ```bash
 beep@projects:~$ telegram.bot --get_chatid --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
@@ -87,7 +87,7 @@ With that information, you are ready to go!
 beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --text "Hello World"
 ```
 
-Messages are build up by four elements (`--document` || `--photo`), `--icon`, `--title` and `--text`  which can be used stand alone, or in combination.
+Messages are build up by four elements (`--document` || `--photo`), `--icon`, `--title` and `--text`  which can be used stand alone, or in any combination.
 
 ```bash
 beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
@@ -102,15 +102,15 @@ beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH
 
 [(Back to Contents)](#contents)
 
-The script has build in functionality to copy itself to `/usr/local/bin`, which should be in the path of most Linux distributions. It also resolves its dependencies on `curl` and `jq` via apt, which binds it to Debian-based distributions. For updating the script, you can run the same routine as for installation, or just copy the new version of the script on your own to `/usr/local/bin`.
+The script has build in functionality to copy itself to `/usr/local/bin`, which should be in the path of most Linux distributions. It also resolves its dependencies on `curl` and `jq` via apt, which binds it to [Debian-based distributions](https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based). For updating the script, you can run the same routine as for installation, or just copy the new version of the script on your own to `/usr/local/bin`.
 
 ```bash
-wget https://github.com/beep-projects/telegram.bot/telegram.bot
+wget https://github.com/beep-projects/telegram.bot/releases/download/v1.0.0/telegram.bot
 chmod 755 telegram.bot
 sudo ./telegram.bot --install
 ```
 
-## 
+
 
 ## Uninstall
 
@@ -155,7 +155,7 @@ beep@projects:~$ telegram.bot --help
     -set/--set_commands "command1=description1" "command2=description2" ... Set the commands for this bot
     -t/--text <text>       Text of the message (use - for piped text)
     -f/--file <file>       File holding the text of the message
-    -p/--photo <file>      Image to display
+    -p/--photo/--picture <file>      Image to display
     -d/--document <file>   Document to transfer
   Options are :
     --title <title>        Title of the message
@@ -207,7 +207,7 @@ This command requires the following flags `--test_token`
 
 If no update is available, the bot will keep polling the server for updates. By default, this is done for 60 seconds. You can change this duration by passing a different value using the `--timeout` flag.
 
-If you want to get only the chat id of the last update, you can use `--get_update_offset` and pass the received offset value to `--get_chatid` via the `--offset` option.
+If you want to get only the chat id of the last update, you can use [`--get_update_offset`](#get-update-offset) and pass the received offset value to `--get_chatid` via the `--offset` option.
 
 ```bash
 beep@projects:~$ telegram.bot --get_chatid --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
@@ -235,7 +235,7 @@ This command requires the following flags `--bottoken`, `--get_chatid`
 
 Calls the [getUpdates](https://core.telegram.org/bots/api#getupdates) function from the bot API and returns the received JSON. This is the function that you need to call for implementing your own Telegram bot and you need to understand how to parse the returned [Update](https://core.telegram.org/bots/api#update) objects. 
 
-In order to avoid getting duplicate updates, extract the **offset** field after each server response. If you missed that, you can call [`--get_update_offset`](#get_update_offset) to get the offset of the latest update.
+In order to avoid getting duplicate updates, you should extract the **offset** field after each server response and pass `offset+1` to the next call using the `--offset` flag. If you missed tho get the offset from the response, you can call [`--get_update_offset`](#get_update_offset) to get the offset of the latest update. 
 
 ```bash
 beep@projects:~$ telegram.bot --get_updates --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
@@ -254,7 +254,9 @@ This command requires the following flags `--bottoken`, `--get_updates`
 
 [(Back to Commands)](#commands)
 
-Calls the [getUpdates](https://core.telegram.org/bots/api#getupdates) function from the bot API and returns and extracts the **offset** value for the last received Update. In order to avoid getting duplicate updates, you should pass `offset+1` to [`--get_updates`](#get_updates) using the `--offset` flag
+Calls the [getUpdates](https://core.telegram.org/bots/api#getupdates) function from the bot API and returns the extracted **offset** value for the last available Update. 
+
+It returns the offset of the last available update, or nothing if no update is available.
 
 ```bash
 beep@projects:~$ telegram.bot --get_update_offset --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
@@ -272,7 +274,7 @@ Use this method to change the list of the bot's commands. It calls [setMyCommand
 It requires `--bottoken`  to identify the bot, for which the commands should be set and a list of "\<command>=\<description>" separated by spaces. 
 
 ```bash
-beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --set_commands "help=show commands list" "reboot=reboot bot server" "shutdown=shut down bot server" "restartme=restart motioneye.service" "status=get system status" "snapshot=get snapshots from all cameras" "uptime=call uptime" "df=call df -h" "mdon=enable motion detection" "mdoff=disable motion detection" "setcommands=update commands at @BotFather"
+beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --set_commands "help=show commands list" "reboot=reboot bot server" "shutdown=shut down bot server" "restart=restart bot server" "status=get system status"
 ```
 
 This command requires the following flags `--bottoken`, `--set_commands` 
