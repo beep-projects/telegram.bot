@@ -90,10 +90,9 @@ beep@projects:~$ telegram.bot --chatid 8339234211 --bottoken 110201543:AAHdqTcvC
 Messages are build up by four elements (`--document` || `--photo`), `--icon`, `--title` and `--text`  which can be used stand alone, or in any combination.
 
 ```bash
-beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
+beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \_, \*, \[, \], \(, \), \~, \`, \|\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
 ```
 <p align="center">
-
 <img src="resources/usage_example.png" alt="Screenshot for Usage Example" style="width:33%;" />
 
 </p> 
@@ -165,7 +164,8 @@ beep@projects:~$ telegram.bot --help
     --silent               Send message in silent mode (no user notification on the client)
     -q/--quiet             Don't print message to stdout
     -v/--verbose           explain what is being done
-    --timeout <timeout>    used by --get_chatid to timeout after <timeout> seconds. Overwrites the default value 60          
+    --timeout <timeout>    used by --get_chatid  and --get_updates to timeout after <timeout> seconds. 
+                           Overwrites the default value 60
     -cid/--chatid <chat-id>    Recipient User or Channel ID
     -bt|-token|--bottoken <bot-token>     Bot Token of your Telegram bot
   Optional icons are :
@@ -237,6 +237,8 @@ Calls the [getUpdates](https://core.telegram.org/bots/api#getupdates) function f
 
 In order to avoid getting duplicate updates, you should extract the **offset** field after each server response and pass `offset+1` to the next call using the `--offset` flag. If you missed tho get the offset from the response, you can call [`--get_update_offset`](#get_update_offset) to get the offset of the latest update. 
 
+This command also uses the `--timeout` flag, which sets the timeout in seconds for long polling. You can set it to 0 to do short polling. Should be positive, short polling should be used for testing purposes only.
+
 ```bash
 beep@projects:~$ telegram.bot --get_updates --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
 {"ok":true,"result":[{"update_id":977635326,
@@ -303,15 +305,21 @@ beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PA
 
 This command requires the following flags `--bottoken`, `--chatid`, `--text` 
 
-Optional you can add an `--icon` to the beginning of your message . For easier use, `--success` (:white_check_mark:, \U2705), `--warning` (:warning:, \U26A0), `--error` (:rotating_light:, \U1F6A8), and `--question` (:question:, \U2753)  are, predefined icons. You can find other codes to use in the [Emoji List](https://unicode.org/emoji/charts/full-emoji-list.html) (Telegram does not support the full list, but unfortunately I have not yet found a complete list for Telegram)
+Default formatting of `--text` is [MarkdownV2 style](https://core.telegram.org/bots/api#markdownv2-style) but you can change it to [HTML style](https://core.telegram.org/bots/api#html-style) by setting the `--html` flag. `telegram.bot` will escape the reserved characters `>`, `#`, `+`, `-`, `=`, `{`, `}`, `.`, `!` automatically. You you have to escape the reserved characters `_`, `*`, `[`, `]`, `(`, `)`, `~`, ``` ``, `|` by yourself, if you do not want to use them for formatting.
 
-Another option is to add a`--title`, which actually puts a new line holding the title in bold to the beginning of the message, just afer the icon, if set.
+```bash
+beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --info --title "MarkdownV2 Style Example" --text "*bold \*text*\n_italic \*text_\n__underline__\n~strikethrough~\n||spoiler||\n*bold _italic bold ~italic bold strikethrough ||italic bold strikethrough spoiler||~ __underline italic bold___ bold*\n[beep-projects](https://github.com/beep-projects)\n[inline mention of a user](tg://user?id=8339234211)\n\`inline fixed-width code\`\n\`\`\`\npre-formatted fixed-width code block\n\`\`\`\n\`\`\`python\npre-formatted fixed-width code block written in the Python programming language\n\`\`\`"
+```
+
+Optional you can add an `--icon` to the beginning of your message . For easier use, `--success` (:white_check_mark:, \U2705), `--warning` (:warning:, \U26A0), `--error` (:rotating_light:, \U1F6A8), `--info` (:information_source:, \U2139), and `--question` (:question:, \U2753)  are, predefined icons. You can find other codes to use in the [Emoji List](https://unicode.org/emoji/charts/full-emoji-list.html) (Telegram does not support the full list, but unfortunately I have not yet found a complete list for Telegram)
+
+Another option is to add a `--title`, which actually puts a new line holding the title in bold to the beginning of the message, just after the icon, if set.
 
 ### Pipe Text to send
 
 [(Back to Commands)](#commands) [(send text)](#send-text)
 
-A special case to send text is piping (`|`) the text to `telegram.bot`, e.g. the output of a command. This can be done by using `-` as single argument to `--text -`.
+A special case to send text is piping (`|`) the text into `telegram.bot`, e.g. the output of a command. This can be done by using `-` as single argument to `--text -`.
 
 ```bash
 beep@projects:~$ echo 'Hello World' | telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --text -
@@ -344,7 +352,7 @@ You can use all other flags that you can also use with [--text](#send-text).
 Use this method to send photos.
 
 ```bash
-beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
+beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --photo resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \_, \*, \[, \], \(, \), \~, \`, \|\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
 ```
 
 This command requires the following flags `--bottoken`, `--chatid`, `--photo`
@@ -358,7 +366,7 @@ Optionally, you can add `--icon`. `--title`, and `--text` to the message
 Use this method to send general files. Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future.
 
 ```bash
-beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --document resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \., \*, \_, \-, \[, \], etc\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
+beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --document resources/telegram.bot.logo.png --success --title "Welcome to telegram\.bot" --text "The *text area*\n_can_ have ~one~ __multiple__ lines\nand Emojis \U1f44d\!\nBut don't forget to escape the reserved characters like \_, \*, \[, \], \(, \), \~, \`, \|\. if you want to use them in your messages\.\nVisit [beep\-projects](https://github.com/beep\-projects/) for more fun projects\."
 ```
 
 This command requires the following flags `--bottoken`, `--chatid`, `--document`
@@ -393,7 +401,7 @@ o = optional
 | **`--file`**                                                 |    **r**     |   **r**    |          o          |    o     |                            o                            |            |     o     |     o      |       o       |          |             |     o     |      o      |
 | **`--get_chatid`**                                           |    **r**     |            |                     |          |                                                         |     o      |     o     |            |               |          |      o      |           |      o      |
 | **`--get_update_offset`**                                    |    **r**     |            |                     |          |                                                         |            |     o     |            |               |          |             |           |      o      |
-| **`--get_updates`**                                          |    **r**     |            |                     |          |                                                         |     o      |     o     |            |               |          |             |           |      o      |
+| **`--get_updates`**                                          |    **r**     |            |                     |          |                                                         |     o      |     o     |            |               |          |      o      |           |      o      |
 | **`--help`**                                                 |              |            |                     |          |                                                         |            |     o     |            |               |          |             |           |      o      |
 | **`--print_logo`**                                           |              |            |                     |          |                                                         |            |     o     |            |               |          |             |           |      o      |
 | **`--photo`**                                                |    **r**     |   **r**    |                     |    o     |                            o                            |            |     o     |     o      |       o       |    o     |             |     o     |      o      |

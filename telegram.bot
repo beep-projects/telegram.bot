@@ -25,6 +25,7 @@
 
 # Initialize all the option variables.
 # This ensures we are not contaminated by variables from the environment.
+
 CHAT_ID=""
 BOT_TOKEN=""
 NOTIFY_TEXT=""
@@ -47,6 +48,7 @@ DELETE_MY_COMMANDS="false"
 SET_MY_COMMANDS="false"
 declare -a MY_COMMANDS
 TEST_BOT_TOKEN="false"
+
 # save the arguments in case they are required later
 ARGS=$*
 
@@ -96,7 +98,8 @@ cat <<END
     --silent               Send message in silent mode (no user notification on the client)
     -q/--quiet             Don't print message to stdout
     -v/--verbose           explain what is being done
-    --timeout <timeout>    used by --get_chatid to timeout after <timeout> seconds. Overwrites the default value ${TIMEOUT}          
+    --timeout <timeout>    used by --get_chatid  and --get_updates to timeout after <timeout> seconds. 
+                           Overwrites the default value ${TIMEOUT} 
     -cid/--chatid <chat-id>    Recipient User or Channel ID
     -bt|-token|--bottoken <bot-token>     Bot Token of your Telegram bot
   Optional icons are :
@@ -381,24 +384,22 @@ while :; do
       LOGO="true"
       ;;
     --success)
-      #DISPLAY_ICON=$(echo -e "\U2705")
       DISPLAY_ICON="\U2705"
       ;;
     --warning)
-      #DISPLAY_ICON=$(echo -e "\U26A0")
       DISPLAY_ICON="\U26A0"
       ;;
     --error)
-      #DISPLAY_ICON=$(echo -e "\U1F6A8")
       DISPLAY_ICON="\U1F6A8"
       ;;
     --question)
-      #DISPLAY_ICON=$(echo -e "\U2753")
       DISPLAY_ICON="\U2753"
+      ;;
+    --info)
+      DISPLAY_ICON="\U2139"
       ;;
     -i|--icon)
       if [ "$2" ]; then
-        #DISPLAY_ICON=$(echo -e "\U$2")
         DISPLAY_ICON="${2}"
         shift
       else
@@ -526,8 +527,8 @@ if [ "${GET_UPDATE_OFFSET}" = "true" ]
 then
   verbose "[telegram.bot] getting UPDATE_OFFSET"
   TIMER=0
-  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" --data "\"timeout=${TIMEOUT}\"" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "timeout=${TIMEOUT}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
   UPDATE_OFFSET=$( echo "${CURL_RESULT}" | jq '.result | .[-1].update_id' )
   verbose "[telegram.bot] JSON received: ${CURL_RESULT}"
   if [ -n "${UPDATE_OFFSET}" ] && [ "${UPDATE_OFFSET}" != "null" ]
@@ -546,8 +547,8 @@ fi
 if [ "${GET_UPDATES}" = "true" ]
 then
   verbose "[telegram.bot] getting UPDATES"
-  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "--data offset=${OFFSET}" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
-  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "offset=${OFFSET}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
+  verbose "[telegram.bot] curl" "${CURL_OPTIONS[@]}" "--data \"timeout=${TIMEOUT}\"" "--data \"offset=${OFFSET}\"" "\"https://api.telegram.org/bot${BOT_TOKEN}/getUpdates\""
+  CURL_RESULT=$(curl "${CURL_OPTIONS[@]}" --data "timeout=${TIMEOUT}" --data "offset=${OFFSET}" "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates")
   echo "${CURL_RESULT}"
   #echo "${CURL_RESULT}" | grep '"ok":true' > /dev/null || { error "${CURL_RESULT}"; }
   exit 0
@@ -589,11 +590,40 @@ fi
 # join icon + title + text
 [ "${DISPLAY_TEXT}" != "" ] && NOTIFY_TEXT="${NOTIFY_TEXT}${DISPLAY_TEXT}"
 
+if [ "${PARSE_MODE}" = "markdownv2" ]
+then
+  # convert reserved characters, see https://core.telegram.org/bots/api#markdownv2-style
+  #  '>', '#', '+', '-', '=', '{', '}', '.', '!'
+  # the user has to escape the ones used for formatting by himself '_', '*', '[', ']', '(', ')', '~', '`', '|'
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\\/\\\)}" #make sure this is first
+  NOTIFY_TEXT="${NOTIFY_TEXT//\./\\\.}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\!/\\\!}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\(/\\\(}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\)/\\\)}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\[/\\\[}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\]/\\\]}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\-/\\\-}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\_/\\\_}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\*/\\\*}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\~/\\\~}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\`/\\\`}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\>/\\\>}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\#/\\\#}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\+/\\\+}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\=/\\\=}"
+  #NOTIFY_TEXT="${NOTIFY_TEXT//\|/\\\|}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\{/\\\{}"
+  NOTIFY_TEXT="${NOTIFY_TEXT//\}/\\\}}"
+#elif [ "${PARSE_MODE}" = "html" ]
+#then
+  #nothing to do
+fi
 # convert \n to LF
-#NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/$'\n'}"
-#convert reserved characters -
-#NOTIFY_TEXT="${NOTIFY_TEXT//-/\\-}"
+# NOTIFY_TEXT="${NOTIFY_TEXT//'\n'/$'\n'}"
 NOTIFY_TEXT=$(echo -e "${NOTIFY_TEXT}")
+
+# NOTIFY_TEXT=$( printf "${NOTIFY_TEXT}" )
+# printf -v NOTIFY_TEXT "%s" "${NOTIFY_TEXT}"
 
 # -------------------------------------------------------
 #   Notification
