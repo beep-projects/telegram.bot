@@ -104,7 +104,7 @@ beep@projects:~/git/telegram.bot$ ./telegram.bot --bottoken 110201543:AAHdqTcvCH
 The script has build in functionality to copy itself to `/usr/local/bin`, which should be in the path of most Linux distributions. It also resolves its dependencies on `curl` and `jq` via apt, which binds it to [Debian-based distributions](https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based). For updating the script, you can run the same routine as for installation, or just copy the new version of the script on your own to `/usr/local/bin`.
 
 ```bash
-wget https://github.com/beep-projects/telegram.bot/releases/download/v1.0.0/telegram.bot
+wget https://github.com/beep-projects/telegram.bot/releases/latest/download/telegram.bot
 chmod 755 telegram.bot
 sudo ./telegram.bot --install
 ```
@@ -305,10 +305,15 @@ beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PA
 
 This command requires the following flags `--bottoken`, `--chatid`, `--text` 
 
-Default formatting of `--text` is [MarkdownV2 style](https://core.telegram.org/bots/api#markdownv2-style) but you can change it to [HTML style](https://core.telegram.org/bots/api#html-style) by setting the `--html` flag. `telegram.bot` will escape the reserved characters `>`, `#`, `+`, `-`, `=`, `{`, `}`, `.`, `!` automatically. You you have to escape the reserved characters `_`, `*`, `[`, `]`, `(`, `)`, `~`, ``` ``, `|` by yourself, if you do not want to use them for formatting.
+Default formatting of `--text` is [MarkdownV2 style](https://core.telegram.org/bots/api#markdownv2-style) but you can change it to [HTML style](https://core.telegram.org/bots/api#html-style) by setting the `--html` flag.  When you use MarkdownV2 formatting `telegram.bot` will escape the reserved characters `>`, `#`, `+`, `-`, `=`, `{`, `}`, `.`, `!` automatically. You you have to escape the reserved characters `_`, `*`, `[`, `]`, `(`, `)`, `~`, ``` ``, `|` by yourself, if you do not want to use them for formatting.
 
 ```bash
 beep@projects:~$ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --info --title "MarkdownV2 Style Example" --text "*bold \*text*\n_italic \*text_\n__underline__\n~strikethrough~\n||spoiler||\n*bold _italic bold ~italic bold strikethrough ||italic bold strikethrough spoiler||~ __underline italic bold___ bold*\n[beep-projects](https://github.com/beep-projects)\n[inline mention of a user](tg://user?id=8339234211)\n\`inline fixed-width code\`\n\`\`\`\npre-formatted fixed-width code block\n\`\`\`\n\`\`\`python\npre-formatted fixed-width code block written in the Python programming language\n\`\`\`"
+```
+
+```bash
+beep@projects:~ $ telegram.bot --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw --chatid 8339234211 --html --info --title "HTML Style Example" --text "<b>bold</b>, <strong>bold</strong>
+<i>italic</i>, <em>italic</em>\n<u>underline</u>, <ins>underline</ins>\n<s>strikethrough</s>, <strike>strikethrough</strike>, <del>strikethrough</del>\n<span class="tg-spoiler">spoiler</span>, <tg-spoiler>spoiler</tg-spoiler>\n<b>bold <i>italic bold <s>italic bold strikethrough <span class="tg-spoiler">italic bold strikethrough spoiler</span></s> <u>underline italic bold</u></i> bold</b>\n<a href=\"https://github.com/beep-projects\">beep-projects</a>\n<a href=\"tg://user?id=8339234211\">inline mention of a user</a>\n<code>inline fixed-width code</code>\n<pre>pre-formatted fixed-width code block</pre>
 ```
 
 Optional you can add an `--icon` to the beginning of your message . For easier use, `--success` (:white_check_mark:, \U2705), `--warning` (:warning:, \U26A0), `--error` (:rotating_light:, \U1F6A8), `--info` (:information_source:, \U2139), and `--question` (:question:, \U2753)  are, predefined icons. You can find other codes to use in the [Emoji List](https://unicode.org/emoji/charts/full-emoji-list.html) (Telegram does not support the full list, but unfortunately I have not yet found a complete list for Telegram)
