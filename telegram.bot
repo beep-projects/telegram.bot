@@ -422,8 +422,9 @@ done
 verbose "[telegram.bot]" "${0}" "${ARGS}"
 
 # Check Bot Token and Chat ID
-# A Bot Token is always required
-[ "${BOT_TOKEN}" = "" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
+# A Bot Token is always required, except for --print_logo
+#[ "${BOT_TOKEN}" = "" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
+[ "${BOT_TOKEN}" = "" ] && [ "${LOGO}" = "false" ] && { error "[telegram.bot] Please provide a --bottoken"; }
 # Some commands do not require a Chat ID
 [ "${CHAT_ID}" = "" ] && [ "${GET_CHAT_ID}" = "false" ] && [ "${DELETE_MY_COMMANDS}" = "false" ] && [ "${SET_MY_COMMANDS}" = "false" ] && [ "${TEST_BOT_TOKEN}" = "false" ] && [ "${LOGO}" = "false" ] && [ "${GET_UPDATE_OFFSET}" = "false" ] && [ "${GET_UPDATES}" = "false" ] && { error "[telegram.bot] Please provide a --chatid"; }
 
