@@ -47,7 +47,7 @@ The **API token** is a string like `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
 First thing you should do is to test if your API token is valid. The test will finish silently, if the API token is valid, and it will return the Telegram server's reply, if the API token is invalid, e.g.
 
 ```bash
-beep@projects:~$ telegram.bot --test_token 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
+beep@projects:~$ telegram.bot --test_token --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
 {"ok":false,"error_code":404,"description":"Not Found"}
 beep@projects:~$ 
 ```
@@ -192,12 +192,12 @@ If the result is ok, nothing is returned
 If the result is not ok, the reply from the server is returned
 
 ```bash
-beep@projects:~$ telegram.bot --test_token 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
+beep@projects:~$ telegram.bot --test_token --bottoken 110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
 {"ok":false,"error_code":404,"description":"Not Found"}
 beep@projects:~$ 
 ```
 
-This command requires the following flags `--test_token` 
+This command requires the following flags `--test_token`, ` --bottoken`
 
 ### Get Chatid
 
